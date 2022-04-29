@@ -63,7 +63,8 @@ from transformers import glue_compute_metrics as compute_metrics
 from transformers import glue_convert_examples_to_features as convert_examples_to_features
 from transformers import glue_output_modes as output_modes
 from transformers import glue_processors as processors
-from transformers import finalAlignmentPred
+# from transformers import finalAlignmentPred
+from finalAlignmentPred import *
 
 
 from transformers.modeling_roberta import RobertaClassificationHead
@@ -359,11 +360,12 @@ def evaluate(args, model, tokenizer, prefix="", finalEval=False):
         results.update(result)
 
         if args.calc_final_alignments and finalEval:
-            finalAlignmentPred.calc_final_alignments(args.data_dir,args.output_dir, preds, preds_prob)
+            # finalAlignmentPred.calc_final_alignments(args.data_dir,args.output_dir, preds, preds_prob)
+            calc_final_alignments(args.data_dir, args.output_dir, preds, preds_prob, args)
 
         if args.calc_alignment_sim_mat and finalEval:
-            finalAlignmentPred.calc_alignment_sim_mat(args.data_dir,args.output_dir, preds_prob)
-
+            # finalAlignmentPred.calc_alignment_sim_mat(args.data_dir,args.output_dir, preds_prob)
+            calc_alignment_sim_mat(args.data_dir, args.output_dir, preds_prob)
 
         output_eval_file = os.path.join(eval_output_dir, prefix, "eval_results.txt")
         with open(output_eval_file, "w") as writer:
@@ -508,6 +510,7 @@ def main():
     parser.add_argument(
         "--per_gpu_train_batch_size", default=8, type=int, help="Batch size per GPU/CPU for training.",
     )
+
     parser.add_argument(
         "--per_gpu_eval_batch_size", default=8, type=int, help="Batch size per GPU/CPU for evaluation.",
     )
@@ -572,6 +575,10 @@ def main():
         "--calc_alignment_sim_mat", action="store_true", help="Set this flag if you want to calculate alignment_sim_mat.",
     )
 
+    # added for the controlled reduction project
+    parser.add_argument("--filt-threshold", type=float, default=0.5, help="threshold for filtering alignments (if the probability of the alignment is greater or equal to the threshold). in fraction (e.g., --filt-threshold 0.1 for threshold of 10%)")
+    parser.add_argument("--filler", action="store_true", default=False, help="flag for filling in spans of the summary that weren't filled (using the maximum probabilty covering that span, even if below threshold). Requires to pass also json file with lengths of the summaries")
+    parser.add_argument("--summaries-len-json", default=None, type=str, help="path to json with summaries lengths")
     args = parser.parse_args()
 
     if (
